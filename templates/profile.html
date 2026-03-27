@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>내 프로필</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="profile-body"> <div class="container">
+        
+        <div class="top-nav">
+            <a href="/edit_profile" class="btn-dark">프로필 수정</a>
+            <a href="/logout" class="btn-dark">로그아웃</a>
+        </div>
+
+        <div class="profile-header">
+            <div class="profile-img-box">
+                {% if user.profile_image_url %}
+                    <img src="{{ user.profile_image_url }}" alt="프사">
+                {% else %}
+                    <div class="no-img">No Image</div>
+                {% endif %}
+            </div>
+
+            <div class="profile-info">
+                <p><strong>아이디:</strong> {{ user.username }}</p>
+                <p><strong>이메일:</strong> {{ user.email if user.email else '미입력' }}</p>
+                <p><strong>전화번호:</strong> {{ user.phone_number if user.phone_number else '미입력' }}</p>
+                <p><strong>소개글:</strong> {{ user.bio if user.bio else '안녕하세요!' }}</p>
+            </div>
+        </div>
+
+        <div class="sections-container">
+            {% for sec in sections %}
+            <div class="section-box">{{ sec.content }}</div>
+            {% else %}
+            <div style="text-align: center; color: #888; margin-top: 40px; font-size: 18px;">
+                <p>등록된 소개창이 없습니다.<br>우측 하단의 '소개 편집' 버튼을 눌러 추가해보세요.</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; margin-top: 40px; margin-bottom: 60px;">
+            <a href="/edit_sections" class="btn-dark" style="padding: 10px 25px; font-size: 15px;">
+                소개 편집
+            </a>
+        </div>
+    </div>
+</body>
+</html>

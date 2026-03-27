@@ -1,0 +1,6 @@
+.env
+venv/
+__pycache__/
+*.pem
+static/uploads/*
+!static/uploads/.gitkeep
