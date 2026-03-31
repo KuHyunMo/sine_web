@@ -10,17 +10,12 @@ url : https://implementmo.world
 
 | **분류** | **기술 스택** | **선택 이유** |
 | --- | --- | --- |
-| **Frontend** | HTML5, CSS, JS | 웹 표준 기술
-활용한 UI 구성 및 서버 API와의 비동기 통신 |
+| **Frontend** | HTML5, CSS, JS | 웹 표준 기술\n활용한 UI 구성 및 서버 API와의 비동기 통신 |
 | **Backend** | **Python (Flask)** | 가벼우면서도 확장이 용이함 |
-| **Database** | **MySQL** | 관계형 데이터베이스(RDBMS)의 표준
-데이터 정규화 및 무결성 보장 |
-| **Server** | **AWS EC2 (Ubuntu)** | 클라우드 인프라 경험
-리눅스 환경에서의 서버 제어 경험 |
-| **Proxy** | **Nginx** | 보안을 위한 리버스 프록시 구성 및 정적 파일 처리 최적화
-WAS(Flask)를 외부망에 노출하지 않아 직접적인 공격 방지 |
-| **Security** | **Certbot (SSL)** | 비용 없이 HTTPS를 구축
-만료 전 자동 갱신으로 유지보수 최소화 |
+| **Database** | **MySQL** | 관계형 데이터베이스(RDBMS)의 표준\n데이터 정규화 및 무결성 보장 |
+| **Server** | **AWS EC2 (Ubuntu)** | 클라우드 인프라 경험\n리눅스 환경에서의 서버 제어 경험 |
+| **Proxy** | **Nginx** | 보안을 위한 리버스 프록시 구성 및 정적 파일 처리 최적화\nWAS(Flask)를 외부망에 노출하지 않아 직접적인 공격 방지 |
+| **Security** | **Certbot (SSL)** | 비용 없이 HTTPS를 구축\n만료 전 자동 갱신으로 유지보수 최소화 |
 
 ### 전체 구조
 
