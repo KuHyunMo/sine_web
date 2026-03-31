@@ -23,7 +23,7 @@ async function loginUser() {
             window.location.href = '/profile'; // 성공하면 프로필 페이지로 이동!
         } else {
             alert('로그인 실패\n아이디와 비밀번호를 확인해주세요');
-            log(result.message)
+            console.log(result.message)
         }
     } catch (error) {
         alert('서버와 통신하는 중 문제가 발생했습니다.');
