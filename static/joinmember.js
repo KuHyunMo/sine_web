@@ -8,7 +8,7 @@ async function registerUser() {
         return;
     }
 
-    // ⭐️ 이메일 빼고 아이디랑 비번만 포장!
+    // 이메일 빼고 아이디랑 비번만 포장!
     const data = {
         username: username,
         password: password

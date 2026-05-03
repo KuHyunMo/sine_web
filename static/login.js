@@ -20,7 +20,7 @@ async function loginUser() {
         
         if (result.status === 'success') {
             alert('로그인 성공! 환영합니다.');
-            window.location.href = '/profile'; // 성공하면 프로필 페이지로 이동!
+            window.location.href = '/profile'; // 성공하면 프로필 페이지로 이동
         } else {
             alert('로그인 실패\n아이디와 비밀번호를 확인해주세요');
             console.log(result.message)

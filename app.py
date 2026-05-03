@@ -1,4 +1,7 @@
 import os
+import filetype
+import io
+from PIL import Image 
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 import pymysql
 import pymysql.cursors
@@ -15,8 +18,67 @@ app.secret_key = os.getenv('SECRET_KEY', 'super_secret_key_for_hacking_study')
 
 # 업로드 폴더 설정
 UPLOAD_FOLDER = 'static/uploads'
+ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif', 'webp'}
+MAX_FILE_SIZE = 5 * 1024 * 1024 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# 파일 검수 --------------
+# 확장자 화이트리스트 검사
+def is_allowed_extension(filename: str) -> bool:
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+#매직 바이트로 실제 이미지 여부 검사 -> 확장자만 바꾼 웹셀 차단
+def is_real_image(file_stream) -> bool:
+    header = file_stream.read(512)
+    file_stream.seek(0)
+    kind = filetype.guess(header)
+    if kind is None:
+        return False
+    return kind.mime in {'image/jpeg', 'image/png', 'image/gif', 'image/webp'}
+
+    
+
+#확장자 → 크기 → 매직바이트 → Pillow 순으로 검증 후 저장
+def validate_and_save_image(profile_image, user_id: int) -> tuple[bool, str]:
+    filename = secure_filename(str(profile_image.filename))
+
+    # 1단계: 확장자 검사
+    if not is_allowed_extension(filename):
+        return False, "허용되지 않는 파일 형식입니다. (jpg, png, gif, webp만 가능)"
+
+    # 2단계: 파일 크기 검사
+    profile_image.stream.seek(0, 2)
+    file_size = profile_image.stream.tell()
+    profile_image.stream.seek(0)
+    if file_size > MAX_FILE_SIZE:
+        return False, "파일 크기는 5MB를 초과할 수 없습니다."
+
+    # 3단계: 매직 바이트 검사
+    if not is_real_image(profile_image.stream):
+        return False, "실제 이미지 파일이 아닙니다."
+
+    # 4단계: Pillow로 재인코딩 (EXIF 악성 메타데이터 제거)
+    try:
+        image_data = profile_image.stream.read()
+        Image.open(io.BytesIO(image_data)).verify()
+
+        clean_img = Image.open(io.BytesIO(image_data))
+        img_format = clean_img.format
+        output = io.BytesIO()
+        clean_img.save(output, format=img_format)
+
+        save_filename = f"user_{user_id}_{filename}"
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], save_filename)
+        with open(filepath, 'wb') as f:
+            f.write(output.getvalue())
+
+        return True, f"/static/uploads/{save_filename}"
+    except Exception:
+        return False, "이미지 처리 중 오류가 발생했습니다."
+
+#
 
 # 2. 데이터베이스 연결 함수 (반환 타입을 Optional로 명시)
 def get_db_connection() -> Any: 
@@ -27,7 +89,7 @@ def get_db_connection() -> Any:
             password=os.getenv("DB_PASSWORD", ""),
             database=os.getenv("DB_NAME", "web_hacking_study"),
             charset='utf8mb4',
-            cursorclass=pymysql.cursors.DictCursor # 👈 이 녀석 때문에 타입 불일치가 발생한 거야
+            cursorclass=pymysql.cursors.DictCursor
         )
         return conn
     except Exception as e:
@@ -52,12 +114,12 @@ def register():
     hashed_pw = generate_password_hash(password)
     conn = get_db_connection()
     
-    # 🛡️ 여기서 확실하게 체크해주면 Pylance가 아래 코드에서 에러를 안 내!
+    #  여기서 확실하게 체크해주면 Pylance가 아래 코드에서 에러가 안남
     if conn is None:
         return jsonify({"status": "error", "message": "DB 연결 실패"}), 500
     
     try:
-        with conn.cursor() as cursor: # 👈 with 문을 쓰면 훨씬 안전하고 에러가 적어
+        with conn.cursor() as cursor: 
             cursor.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (username, hashed_pw))
             user_id = cursor.lastrowid
             cursor.execute("INSERT INTO user_profiles (user_id) VALUES (%s)", (user_id,))
@@ -175,11 +237,10 @@ def api_edit_profile():
     image_url = None
     
     if profile_image and profile_image.filename:
-        filename = secure_filename(str(profile_image.filename))
-        save_filename = f"user_{user_id}_{filename}"
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], save_filename)
-        profile_image.save(filepath)
-        image_url = f"/static/uploads/{save_filename}"
+        success, result = validate_and_save_image(profile_image, user_id)
+        if not success:
+            return jsonify({"status": "error", "message": result})
+        image_url = result
         
     conn = get_db_connection()
     if conn is None: return jsonify({"status": "error", "message": "DB 연결 실패"}), 500
@@ -199,6 +260,7 @@ def api_edit_profile():
         return jsonify({"status": "error", "message": str(e)})
     finally:
         conn.close()
+
 
 # --- [소개창 관리] ---
 @app.route('/edit_sections')
