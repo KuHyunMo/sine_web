@@ -21,10 +21,17 @@ async function updateProfile() {
         });
 
         const result = await response.json();
+        
         if (result.status === 'success') {
             alert('프로필이 성공적으로 업데이트되었습니다!');
             window.location.href = '/profile';
-        } else {
+        }
+        else if (result.status === 'invalid_file') {
+            // 잘못된 파일 업로드 시 알림 후 프로필 페이지로 이동
+            alert(result.message);
+            window.location.href = '/profile';
+        }
+        else {
             alert('수정 실패: ' + result.message);
         }
     } catch (error) {

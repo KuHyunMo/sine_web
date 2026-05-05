@@ -14,7 +14,9 @@ from typing import Any, Optional
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv('SECRET_KEY', 'super_secret_key_for_hacking_study')
+app.secret_key = os.getenv('SECRET_KEY')
+if not app.secret_key:
+    raise RuntimeError("SECRET_KEY 환경변수가 설정되지 않았습니다.")
 
 # 업로드 폴더 설정
 UPLOAD_FOLDER = 'static/uploads'
@@ -246,15 +248,29 @@ def api_edit_profile():
     if conn is None: return jsonify({"status": "error", "message": "DB 연결 실패"}), 500
     
     try:
+        old_file_path = None
         with conn.cursor() as cursor:
             if image_url:
+                cursor.execute("SELECT profile_image_url FROM user_profiles WHERE user_id = %s", (user_id,))
+                row = cursor.fetchone()
+                if row and row['profile_image_url']:
+                    old_file_path = row['profile_image_url'].lstrip('/')
+
                 sql = "UPDATE user_profiles SET email=%s, phone_number=%s, bio=%s, profile_image_url=%s WHERE user_id=%s"
                 cursor.execute(sql, (email, phone_number, bio, image_url, user_id))
             else:
                 sql = "UPDATE user_profiles SET email=%s, phone_number=%s, bio=%s WHERE user_id=%s"
                 cursor.execute(sql, (email, phone_number, bio, user_id))
         conn.commit()
-        return redirect('/profile')
+
+        if old_file_path and os.path.exists(old_file_path):
+            try:
+                os.remove(old_file_path)
+            except Exception as e:
+                print(f"파일 삭제 실패: {e}")
+
+        return jsonify({"status": "success"})
+    
     except Exception as e:
         conn.rollback()
         return jsonify({"status": "error", "message": str(e)})
@@ -314,4 +330,11 @@ def api_delete_section(section_id):
         conn.close()
 
 if __name__ == '__main__':
+    """ 디버깅 모드
     app.run(host='0.0.0.0', port=5000, debug=True)
+    """
+    app.run(
+        host='0.0.0.0',
+        port=5000,
+        debug=os.getenv('FLASK_DEBUG', 'False') == 'True'
+    )
